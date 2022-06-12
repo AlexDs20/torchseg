@@ -3,13 +3,13 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-from data.mnist.load_mnist import mnist
+from data.mnist.load_data import data
 
 class CustomDataset(Dataset):
     def __init__(self, directory='data/mnist/', train=True):
         self.train = train
 
-        x_train, y_train, x_test, y_test = mnist(directory)
+        x_train, y_train, x_test, y_test = data(directory)
 
         if self.train:
             self.x_train = x_train
