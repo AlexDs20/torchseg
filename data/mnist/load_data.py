@@ -6,7 +6,7 @@ from typing import Optional, Tuple
 import numpy as np
 
 
-def mnist(path):
+def data(path):
     url = 'http://yann.lecun.com/exdb/mnist/'
     files = ['train-images-idx3-ubyte.gz',
              'train-labels-idx1-ubyte.gz',
@@ -49,4 +49,4 @@ def mnist(path):
     return train_images, train_labels, test_images, test_labels
 
 if __name__ == '__main__':
-    x_train,y_train,x_test,y_test = mnist('.')
+    x_train,y_train,x_test,y_test = data('.')
