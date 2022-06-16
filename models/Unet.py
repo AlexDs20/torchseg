@@ -4,21 +4,31 @@ import torch.nn.functional as F
 
 
 class DoubleConv(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, padding_mode='reflect', residual=False, **kwargs):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, padding_mode='reflect', residual=False, batch_norm=False, **kwargs):
         super(DoubleConv, self).__init__()
 
         self.residual = residual
+        self.batch_norm = batch_norm
 
         self.conv1 = nn.Conv2d(in_channels,  out_channels, kernel_size=kernel_size, stride=stride, padding=padding, padding_mode=padding_mode, **kwargs)
         self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, padding_mode=padding_mode, **kwargs)
 
+
         if self.residual:
             self.res = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1)
+
+        if self.batch_norm:
+            self.bn1 = nn.BatchNorm2d(out_channels)
+            self.bn2 = nn.BatchNorm2d(out_channels)
 
 
     def forward(self, x):
         out = F.relu(self.conv1(x))
+        if self.batch_norm:
+            out = self.bn1(out)
         out = F.relu(self.conv2(out))
+        if self.batch_norm:
+            out = self.bn2(out)
         if self.residual:
             out = out + self.res(x)
         return out
@@ -54,9 +64,7 @@ class Decoder(nn.Module):
         encoder_params = parameters['Encoder']
         decoder_params = parameters['Decoder']
 
-        encoder_out_channels = []
-        for key, val in encoder_params.items():
-            encoder_out_channels.append(val['out_channels'])
+        encoder_out_channels = [ layer['out_channels'] for layer in encoder_params.values() ]
 
 
         self.Conv = nn.ModuleList()
@@ -142,6 +150,7 @@ if __name__=='__main__':
                     'in_channels': features,
                     'out_channels': 64,
                     'residual': True,
+                    'batch_norm': True
                 },
                 'layer2': {
                     'in_channels': 64,
