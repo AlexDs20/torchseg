@@ -1,17 +1,17 @@
 dataloader:
   train:
-    batch_size: 1024
+    batch_size: 2048
     shuffle: True
   val:
-    batch_size: 1024
+    batch_size: 2048
     shuffle: False
   test:
-    batch_size: 1024
+    batch_size: 2048
     shuffle: False
 
 trainer:
   gpus: 1
-  max_epochs: 2
+  max_epochs: 10
   #log_every_n_steps: 10
 
 loss:

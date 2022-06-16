@@ -58,7 +58,7 @@ class Classifier(nn.Module):
 
 if __name__ == '__main__':
     image = torch.ones((5,1,28,28))
-    model = Classifier(1)
+    model = Classifier()
     model(image)
 
     bs = 5
