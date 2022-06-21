@@ -1,10 +1,7 @@
 import pytest
 import torch
 
-import sys
-sys.path.append('.')
-
-from models.Unet import DoubleConv, Encoder, Decoder, Unet
+from segmentation.models.Unet import DoubleConv, Encoder, Decoder, Unet
 
 class TestUnet:
     def test_doubleconv(self):
