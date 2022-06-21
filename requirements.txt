@@ -1,7 +1,5 @@
 pytorch-lightning
-PyYAML
+pyyaml
 tensorboard
 torch
-torchaudio
-torchvision
 torchmetrics
