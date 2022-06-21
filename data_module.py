@@ -38,8 +38,3 @@ class DataModule(pl.LightningDataModule):
         #val = DataLoader(self.val, batch_size=self.batch_size)
         #return val
         pass
-
-    def test_dataloader(self):
-        #test = DataLoader(self.test, batch_size=self.batch_size)
-        #return test
-        pass

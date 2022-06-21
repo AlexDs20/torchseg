@@ -8,6 +8,8 @@ from torch.utils.data import DataLoader
 
 import pytorch_lightning as pl
 
+import torchmetrics as tm
+
 from models.simple_rnn import Classifier as Model
 from dataset import train_dataset
 from dataset import test_dataset as val_dataset
@@ -61,6 +63,7 @@ class plModel(pl.LightningModule):
 
         self.model = Model()
         self.loss = nn.CrossEntropyLoss()
+        self.metrics = tm.Accuracy().to(self.device)
 
     def forward(self, x):
         out = self.model(x)
@@ -75,6 +78,7 @@ class plModel(pl.LightningModule):
         logits = self.model(x)
         loss = self.loss(logits, y.to(torch.float))
         self.log('train_loss', loss)
+        self.log(f'train_{self.metrics}', self.metrics(logits, y))
         return loss
 
     def validation_step(self, batch, idx):
@@ -82,6 +86,8 @@ class plModel(pl.LightningModule):
         logits = self.model(x)
         loss = self.loss(logits, y.to(torch.float))
         self.log('val_loss', loss)
+        self.log(f'val_{self.metrics}', self.metrics(logits, y))
+        self.log('hp_metric', loss)
         return loss
 
 
