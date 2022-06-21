@@ -1,6 +1,3 @@
 data/mnist/*.gz
 __pycache__
 lightning_logs
-.venv
-.env
-venv
