@@ -3,7 +3,6 @@ import gzip
 from urllib.request import urlretrieve
 
 import numpy as np
-import torch
 from torch.utils.data import Dataset, DataLoader
 
 import pytorch_lightning as pl
