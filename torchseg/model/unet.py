@@ -86,6 +86,15 @@ class Decoder(nn.Module):
 
         return out
 
+class Head(nn.Module):
+    def __init__(self, params):
+        super().__init__()
+        self.head = nn.Conv2d(**params, kernel_size=3, stride=1, padding=1, padding_mode='reflect')
+
+    def forward(self, features):
+        out = self.head(features)
+        return out
+
 
 class Unet(nn.Module):
     def __init__(self, parameters):
@@ -98,108 +107,3 @@ class Unet(nn.Module):
         features = self.encoder(x)
         out = self.decoder(features)
         return out
-
-
-if __name__=='__main__':
-    from torch.utils.tensorboard import SummaryWriter
-    writer = SummaryWriter()
-
-    bs = 12
-    features = 5
-    w, h = 128, 128
-
-    x = torch.ones((bs, features, w, h))
-
-    if 0:
-        out_channels = 64
-        model = DoubleConv(features, out_channels)
-        out = model(x)
-        print(out.shape)
-
-    if 0:
-        parameters = {
-            'layer1': {
-                'in_channels': features,
-                'out_channels': 64,
-            },
-            'layer2': {
-                'in_channels': 64,
-                'out_channels': 128,
-            },
-            'layer3': {
-                'in_channels': 128,
-                'out_channels': 256,
-            },
-            'layer4': {
-                'in_channels': 256,
-                'out_channels': 512,
-            },
-            'layer5': {
-                'in_channels': 512,
-                'out_channels': 1024,
-            }
-        }
-        model = Encoder(parameters)
-        out = model(x)
-        print(out.shape)
-
-    if 1:
-        parameters = {
-            'Encoder':{
-                'layer1': {
-                    'in_channels': features,
-                    'out_channels': 64,
-                    'residual': True,
-                    'batch_norm': True
-                },
-                'layer2': {
-                    'in_channels': 64,
-                    'out_channels': 128,
-                    'residual': True,
-                },
-                'layer3': {
-                    'in_channels': 128,
-                    'out_channels': 256,
-                    'residual': True,
-                },
-                'layer4': {
-                    'in_channels': 256,
-                    'out_channels': 512,
-                    'residual': True,
-                },
-                'layer5': {
-                    'in_channels': 512,
-                    'out_channels': 1024,
-                    'residual': True,
-                }
-            },
-            'Decoder':{
-                'layer4': {
-                    'in_channels': 1024,
-                    'out_channels': 512,
-                    'residual': True,
-                },
-                'layer3': {
-                    'in_channels': 512,
-                    'out_channels': 256,
-                    'residual': True,
-                },
-                'layer2': {
-                    'in_channels': 256,
-                    'out_channels': 128,
-                    'residual': True,
-                },
-                'layer1': {
-                    'in_channels': 128,
-                    'out_channels': 64,
-                    'residual': True,
-                }
-            }
-        }
-        model = Unet(parameters)
-        #out = model(x)
-        #print(out.shape)
-        writer.add_graph(model, x)
-
-    writer.close()
-

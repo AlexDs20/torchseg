@@ -1,43 +1,147 @@
+model:
+    encoder:
+        level1:
+            in_channels: 3
+            out_channels: 64
+            residual: True
+            batch_norm: True
+        level2:
+            in_channels: 64
+            out_channels: 128
+            residual: True
+            batch_norm: True
+        level3:
+            in_channels: 128
+            out_channels: 256
+            residual: True
+            batch_norm: True
+        level4:
+            in_channels: 256
+            out_channels: 512
+            residual: True
+            batch_norm: True
+        level5:
+            in_channels: 512
+            out_channels: 1024
+            residual: True
+            batch_norm: True
+    decoder:
+        level4:
+            in_channels: 1024
+            out_channels: 512
+            residual: True
+            batch_norm: True
+        level3:
+            in_channels: 512
+            out_channels: 256
+            residual: True
+            batch_norm: True
+        level2:
+            in_channels: 256
+            out_channels: 128
+            residual: True
+            batch_norm: True
+        level1:
+            in_channels: 128
+            out_channels: 64
+            residual: True
+            batch_norm: True
+    head:
+        in_channels: 64
+        out_channels: 1
+
+data:
+    train_folder: 'data/train'
+    valid_folder: 'data/valid'
+
+    processing:
+        use_weights: False
+        ignore_index: &ignore_index 2
+        mode: &mode 'binary'
+
 dataloader:
-  train:
-    batch_size: 2048
-    shuffle: True
-  val:
-    batch_size: 2048
-    shuffle: False
-  test:
-    batch_size: 2048
-    shuffle: False
+    train:
+        batch_size: 2
+        num_workers: 2
+    valid:
+        batch_size: 2
+        num_workers: 2
 
 trainer:
-  gpus: 1
-  max_epochs: 10
-  #log_every_n_steps: 10
-
-loss:
-  train:
-    weight: 1
-    name: CrossEntropy
-  val:
-    weight: 1
-    name: CrossEntropy
-
-model:
-  Classification:
-    conv2d: ok
-
-logger:
-  train:
-    accuracy: True
-    hp_metric: accuracy
-  val:
-    accuracy: True
-
-optimizers:
-  - Adam
-
-lr_scheduler:
-  - None
+    max_epochs: 10
+    gpus: 1
 
 callbacks:
-  - None
+    ModelCheckpoint:
+        dirpath: 'run/checkpoints'
+        filename: '{epoch}-{val_loss:.2f}'
+        save_top_k: -1
+        monitor: 'valid/loss'
+
+    ImageLogger:
+        RGB:
+            image1: [0,1,2]
+        normalize: True
+        num_images:
+        on_validation_epoch_end: True
+        on_train_epoch_end: True
+
+    LearningRateMonitor:
+
+
+loggers:
+    TensorBoardLogger:
+        save_dir: 'run/lightning_logs'
+    WandbLogger:
+        save_dir: 'run/wandb'
+        project: 'test'
+
+optimizer:
+    Adam:
+        lr: 0.00001
+
+lr_scheduler:
+    ReduceLROnPlateau:
+
+metrics:
+    train:
+        Accuracy:
+            reduction: 'micro'
+        Precision:
+            reduction: 'micro'
+        Recall:
+            reduction: 'micro'
+
+    valid:
+        Accuracy:
+            reduction: 'micro'
+        Precision:
+            reduction: 'micro'
+        Recall:
+            reduction: 'micro'
+
+loss:
+    train:
+        FocalLoss:
+            weight: 1
+            mode: *mode
+            alpha: 0.25
+            gamma: 2
+            ignore_index: *ignore_index
+    valid:
+        DiceLoss:
+            weight: 0.5
+            mode: *mode
+            ignore_index: *ignore_index
+        FocalLoss:
+            weight: 0.5
+            mode: *mode
+            ignore_index: *ignore_index
+
+transfer_learning:
+    # transfer_from_checkpoint:
+    # trainer:
+    #     max_epochs: 1
+    #     gpus: 1
+
+resume_from_ckpt:

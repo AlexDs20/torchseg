@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from torchseg.models.Unet import DoubleConv, Encoder, Decoder, Unet
+from torchseg.model.unet import DoubleConv, Encoder, Decoder, Unet
 
 class TestUnet:
     def test_doubleconv(self):
