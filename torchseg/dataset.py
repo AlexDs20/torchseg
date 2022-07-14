@@ -11,7 +11,7 @@ class StackedDataSet(Dataset):
         label_folder = 'labels'
 
         self.images = glob.glob(os.path.join(path, image_folder, '*.npy'))
-        self.labels = [os.path.join(path, image_folder, os.path.basename(f)) for f in sef.images]
+        self.labels = [os.path.join(path, image_folder, os.path.basename(f)) for f in self.images]
 
     def __len__(self):
         return len(self.images)
