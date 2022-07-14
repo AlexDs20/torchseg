@@ -6,7 +6,7 @@ import numpy as np
 
 class FolderDataSet(Dataset):
     def __init__(self, path: str):
-        super(StackedDataSet, self).__init__()
+        super(FolderDataSet, self).__init__()
         image_folder = 'images'
         label_folder = 'labels'
 
