@@ -120,7 +120,7 @@ class Unet(nn.Module):
     def __init__(self, parameters):
         super(Unet, self).__init__()
 
-        self.encoder = Encoder(parameters['Encoder'])
+        self.encoder = Encoder(parameters['encoder'])
         self.decoder = Decoder(parameters)
 
     def forward(self, x):

@@ -7,7 +7,7 @@ class Model(nn.Module):
         super(Model, self).__init__()
 
         self.encoder = Encoder(params['encoder'])
-        self.decoder = Decoder(params['decoder'])
+        self.decoder = Decoder(params)
         self.head = Head(params['head'])
 
     def forward(self, x):
