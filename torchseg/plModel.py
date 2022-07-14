@@ -12,8 +12,6 @@ from torchseg.transfer_learning import transfer_learning
 import torchseg.metrics.functional as MF
 
 from torchseg.cfgparser import get_metrics, get_callbacks, get_loss, get_optimizer, get_lr_scheduler, get_loggers
-# import sys
-# sys.path.append('.')
 
 
 # Defining LightningModule
