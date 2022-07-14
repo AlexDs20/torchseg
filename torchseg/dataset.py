@@ -25,3 +25,23 @@ class FolderDataSet(Dataset):
         label = np.load(label_path).astype(int)
 
         return image, label
+
+
+class StackedDataSet(Dataset):
+    def __init__(self, path: str):
+        super(StackedDataSet, self).__init__()
+        self.images = glob.glob(os.path.join(path, image_folder, '*.npy'))
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, idx):
+        file_path = self.images[idx]
+        label_path = self.labels[idx]
+
+        # Read the file
+        data = np.load(file_path)
+        image = data[:-1]
+        label = data[-1]
+
+        return image, label
