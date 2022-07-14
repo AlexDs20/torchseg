@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 
 from torchseg.model import Model
-from torchseg.dataset import StackedDataSet
+from torchseg.dataset import FolderDataSet
 from torchseg.transfer_learning import transfer_learning
 import torchseg.metrics.functional as MF
 
