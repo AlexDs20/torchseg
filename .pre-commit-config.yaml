@@ -6,7 +6,7 @@ repos:
     - id: flake8
       args: # arguments to configure flake8
         - "--max-line-length=127"
-        - "--max-complexity=10"
+        - "--max-complexity=18"
         - "--select=B,C,E,F,W,T4,B9"
 
         # these are errors that will be ignored by flake8

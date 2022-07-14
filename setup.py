@@ -5,7 +5,7 @@ from setuptools import setup
 
 directory = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(directory, 'README.md'), encoding='utf-8') as f:
-  long_description = f.read()
+    long_description = f.read()
 
 setup(name='torchseg',
       version='0.0.1',
@@ -14,6 +14,5 @@ setup(name='torchseg',
       license='MIT',
       long_description=long_description,
       long_description_content_type='text/markdown',
-      packages = ['torchseg'],
+      packages=['torchseg'],
       install_requires=['numpy', 'torch', 'pytorch-lightning', 'pyyaml', 'torchmetrics'])
-

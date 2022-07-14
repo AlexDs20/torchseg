@@ -4,19 +4,19 @@ from torch import optim
 
 def get_optimizer(config):
     conv = {
-            'Adadelta': optim.Adadelta,
-            'Adagrad': optim.Adagrad,
-            'Adam': optim.Adam,
-            'AdamW': optim.AdamW,
-            'SparseAdam': optim.SparseAdam,
-            'Adamax': optim.Adamax,
-            'ASGD': optim.ASGD,
-            'LBFGS': optim.LBFGS,
-            'NAdam': optim.NAdam,
-            'RAdam': optim.RAdam,
-            'RMSprop': optim.RMSprop,
-            'SGD': optim.SGD,
-        }
+        'Adadelta': optim.Adadelta,
+        'Adagrad': optim.Adagrad,
+        'Adam': optim.Adam,
+        'AdamW': optim.AdamW,
+        'SparseAdam': optim.SparseAdam,
+        'Adamax': optim.Adamax,
+        'ASGD': optim.ASGD,
+        'LBFGS': optim.LBFGS,
+        'NAdam': optim.NAdam,
+        'RAdam': optim.RAdam,
+        'RMSprop': optim.RMSprop,
+        'SGD': optim.SGD,
+    }
 
     try:
         # Currently only support 1 entry

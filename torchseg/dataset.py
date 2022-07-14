@@ -11,7 +11,7 @@ class FolderDataSet(Dataset):
         label_folder = 'labels'
 
         self.images = glob.glob(os.path.join(path, image_folder, '*.npy'))
-        self.labels = [os.path.join(path, image_folder, os.path.basename(f)) for f in self.images]
+        self.labels = [os.path.join(path, label_folder, os.path.basename(f)) for f in self.images]
 
     def __len__(self):
         return len(self.images)
@@ -30,14 +30,13 @@ class FolderDataSet(Dataset):
 class StackedDataSet(Dataset):
     def __init__(self, path: str):
         super(StackedDataSet, self).__init__()
-        self.images = glob.glob(os.path.join(path, image_folder, '*.npy'))
+        self.images = glob.glob(os.path.join(path, '*.npy'))
 
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, idx):
         file_path = self.images[idx]
-        label_path = self.labels[idx]
 
         # Read the file
         data = np.load(file_path)

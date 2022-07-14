@@ -1,14 +1,15 @@
 from torchseg.callbacks.ImageLogger import ImageLogger
 from pytorch_lightning import callbacks
 
+
 def get_callbacks(config):
     conv = {
-            'ModelCheckpoint': callbacks.ModelCheckpoint,
-            'LearningRateMonitor': callbacks.LearningRateMonitor,
-            'EarlyStopping': callbacks.EarlyStopping,
-            'DeviceStatsMonitor': callbacks.DeviceStatsMonitor,
-            'ImageLogger': ImageLogger,
-        }
+        'ModelCheckpoint': callbacks.ModelCheckpoint,
+        'LearningRateMonitor': callbacks.LearningRateMonitor,
+        'EarlyStopping': callbacks.EarlyStopping,
+        'DeviceStatsMonitor': callbacks.DeviceStatsMonitor,
+        'ImageLogger': ImageLogger,
+    }
 
     cb = []
     try:

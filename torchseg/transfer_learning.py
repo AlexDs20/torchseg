@@ -1,15 +1,17 @@
 import torch
 import pytorch_lightning as pl
 
+
 def transfer_learning(model, config, callbacks, loggers, train_dataloader, valid_dataloader):
     """
     From a certain checkpoint: get the weights.
     From the new model arch.: get the weights.
 
     Loop through the checkpoint layers.
-    If the layers name and shape matches the one for the new model arch -> use the weights from the checkpoints, otherwise keep as is.
+    If the layers name and shape matches the one for the new model arch -> use the weights from the checkpoints.
 
-    If max_epochs is set, then freeze all the layers that are already trained and train for max_epochs, then unfreeze everything.
+    If max_epochs is set, then freeze all the layers that are already trained and train for max_epochs.
+    Then unfreeze everything.
     If max_epochs is set to None, then just return this model
 
     Documentation:

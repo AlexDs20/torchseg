@@ -1,16 +1,16 @@
 import copy
 import torch.nn as nn
-from torchseg.losses import focal
-from torchseg.losses import dice
+from torchseg.losses import FocalLoss
+from torchseg.losses import DiceLoss
 
 
 def get_loss(config):
     conv = {
-            'CrossEntropyLoss': nn.CrossEntropyLoss,
-            'BCEWithLogitsLoss': nn.BCEWithLogitsLoss,
-            'FocalLoss': focal.FocalLoss,
-            'DiceLoss': dice.DiceLoss
-        }
+        'CrossEntropyLoss': nn.CrossEntropyLoss,
+        'BCEWithLogitsLoss': nn.BCEWithLogitsLoss,
+        'FocalLoss': FocalLoss,
+        'DiceLoss': DiceLoss
+    }
     try:
         config_copy = copy.deepcopy(config)
 
@@ -25,4 +25,3 @@ def get_loss(config):
         return all_losses
     except ValueError:
         print(f'Error with the input loss function(s) {config}')
-
