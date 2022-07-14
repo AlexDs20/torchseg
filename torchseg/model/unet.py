@@ -80,8 +80,8 @@ class Decoder(nn.Module):
     def __init__(self, parameters):
         super(Decoder, self).__init__()
 
-        encoder_params = parameters['Encoder']
-        decoder_params = parameters['Decoder']
+        encoder_params = parameters['encoder']
+        decoder_params = parameters['decoder']
 
         encoder_out_channels = [layer['out_channels'] for layer in encoder_params.values()]
 
