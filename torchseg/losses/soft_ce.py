@@ -1,5 +1,5 @@
 from typing import Optional
-from torch import nn, Tensor
+from torch import nn
 import torch
 import torch.nn.functional as F
 from ._functional import label_smoothed_nll_loss

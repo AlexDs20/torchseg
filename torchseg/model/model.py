@@ -1,6 +1,7 @@
 import torch.nn as nn
 from .unet import Encoder, Decoder, Head
 
+
 class Model(nn.Module):
     def __init__(self, params):
         super(Model, self).__init__()

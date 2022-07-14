@@ -26,7 +26,6 @@ Example:
         recall = smp.metrics.recall(tp, fp, fn, tn, reduction="micro-imagewise")
 
 """
-from optparse import Option
 import torch
 import warnings
 from typing import Optional, List, Tuple, Union
@@ -147,7 +146,7 @@ def get_stats(
             f"and relevant class values started from ``0``."
         )
 
-    #TODO checkfor multilabel and binary for ignore index
+    # TODO checkfor multilabel and binary for ignore index
 
     if mode == "multiclass":
         tp, fp, fn, tn = _get_stats_multiclass(output, target, num_classes, ignore_index)
@@ -206,7 +205,7 @@ def _get_stats_multiclass(
 def _get_stats_multilabel(
     output: torch.LongTensor,
     target: torch.LongTensor,
-    ignore_index: Optional[int]=None,
+    ignore_index: Optional[int] = None,
 ) -> Tuple[torch.LongTensor, torch.LongTensor, torch.LongTensor, torch.LongTensor]:
 
     batch_size = output.shape[0]
@@ -223,14 +222,14 @@ def _get_stats_multilabel(
             t_cls = target_img[cls]
 
             if ignore_index is not None:
-                not_ignored = t_cls!=ignore_index
+                not_ignored = t_cls != ignore_index
                 p_cls = p_cls[not_ignored]
                 t_cls = t_cls[not_ignored]
 
-            tp[i, cls] = torch.logical_and(p_cls==1, t_cls==1).long().sum()
-            tn[i, cls] = torch.logical_and(p_cls==0, t_cls==0).long().sum()
-            fp[i, cls] = torch.logical_and(p_cls==1, t_cls==0).long().sum()
-            fn[i, cls] = torch.logical_and(p_cls==0, t_cls==1).long().sum()
+            tp[i, cls] = torch.logical_and(p_cls == 1, t_cls == 1).long().sum()
+            tn[i, cls] = torch.logical_and(p_cls == 0, t_cls == 0).long().sum()
+            fp[i, cls] = torch.logical_and(p_cls == 1, t_cls == 0).long().sum()
+            fn[i, cls] = torch.logical_and(p_cls == 0, t_cls == 1).long().sum()
 
     return tp, fp, fn, tn
 
