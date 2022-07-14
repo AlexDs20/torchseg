@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 import numpy as np
 
 
-class StackedDataSet(Dataset):
+class FolderDataSet(Dataset):
     def __init__(self, path: str):
         super(StackedDataSet, self).__init__()
         image_folder = 'images'

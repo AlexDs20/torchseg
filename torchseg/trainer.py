@@ -149,8 +149,8 @@ if __name__ == '__main__':
     with open(args.config) as cfg:
         config = yaml.load(cfg, Loader=yaml.Loader)
 
-    train_dataloader = DataLoader(StackedDataSet(config['data']['train_folder'], config['data']['processing']), **config['dataloader']['train'])
-    valid_dataloader = DataLoader(StackedDataSet(config['data']['valid_folder'], config['data']['processing']), **config['dataloader']['valid'])
+    train_dataloader = DataLoader(FolderDataSet(config['data']['train_folder'], config['data']['processing']), **config['dataloader']['train'])
+    valid_dataloader = DataLoader(FolderDataSet(config['data']['valid_folder'], config['data']['processing']), **config['dataloader']['valid'])
 
     callbacks = get_callbacks(config['callbacks'])
     loggers = get_loggers(config['loggers'])
