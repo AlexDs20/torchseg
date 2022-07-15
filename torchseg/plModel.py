@@ -1,6 +1,4 @@
-import yaml
 import torch
-import argparse
 import pytorch_lightning as pl
 
 from torch.utils.data import DataLoader
@@ -12,8 +10,6 @@ from torchseg.transfer_learning import transfer_learning
 import torchseg.metrics.functional as MF
 
 from torchseg.cfgparser import get_metrics, get_callbacks, get_loss, get_optimizer, get_lr_scheduler, get_loggers
-# import sys
-# sys.path.append('.')
 
 
 # Defining LightningModule
@@ -131,29 +127,3 @@ class plModel(pl.LightningModule):
         else:
             classes = torch.where(prob > threshold, 1, 0)
         return classes
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config', '-c', help='path to the config.yaml file to be used', default='config.yaml')
-    args = parser.parse_args()
-
-    with open(args.config) as cfg:
-        config = yaml.load(cfg, Loader=yaml.Loader)
-
-    train_dataloader = DataLoader(FolderDataSet(config['data']['train_folder'], config['data']['processing']),
-                                  **config['dataloader']['train'])
-    valid_dataloader = DataLoader(FolderDataSet(config['data']['valid_folder'], config['data']['processing']),
-                                  **config['dataloader']['valid'])
-
-    callbacks = get_callbacks(config['callbacks'])
-    loggers = get_loggers(config['loggers'])
-
-    model = plModel(config)
-
-    trainer = pl.Trainer(callbacks=callbacks, logger=loggers, **config['trainer'])
-
-    if config['transfer_learning'] is not None:
-        model = transfer_learning(model, config['transfer_learning'], callbacks, loggers, train_dataloader, valid_dataloader)
-
-    trainer.fit(model, train_dataloader, valid_dataloader, ckpt_path=config['resume_from_ckpt'])

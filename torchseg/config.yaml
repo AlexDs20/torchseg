@@ -55,7 +55,6 @@ data:
     valid_folder: 'data/valid'
 
     processing:
-        use_weights: False
         ignore_index: &ignore_index 2
         mode: &mode 'binary'
 
