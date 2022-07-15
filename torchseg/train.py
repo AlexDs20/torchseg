@@ -1,4 +1,5 @@
 import yaml
+import argparse
 
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
@@ -27,3 +28,11 @@ def train(cfg_file):
         model = transfer_learning(model, config['transfer_learning'], callbacks, loggers, train_dataloader, valid_dataloader)
 
     trainer.fit(model, train_dataloader, valid_dataloader, ckpt_path=config['resume_from_ckpt'])
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', '-c', help='path to the config.yaml file to be used', default='config.yaml')
+    args = parser.parse_args()
+
+    train(args.config)
