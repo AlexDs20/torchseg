@@ -65,6 +65,9 @@ dataloader:
     valid:
         batch_size: 2
         num_workers: 2
+    test:
+        batch_size: 2
+        num_workers: 2
 
 trainer:
     max_epochs: 10
@@ -119,6 +122,14 @@ metrics:
         Recall:
             reduction: 'micro'
 
+    test:
+        Accuracy:
+            reduction: 'micro'
+        Precision:
+            reduction: 'micro'
+        Recall:
+            reduction: 'micro'
+
 loss:
     train:
         FocalLoss:
@@ -128,6 +139,16 @@ loss:
             gamma: 2
             ignore_index: *ignore_index
     valid:
+        DiceLoss:
+            weight: 0.5
+            mode: *mode
+            ignore_index: *ignore_index
+        FocalLoss:
+            weight: 0.5
+            mode: *mode
+            ignore_index: *ignore_index
+
+    test:
         DiceLoss:
             weight: 0.5
             mode: *mode

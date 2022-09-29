@@ -3,6 +3,7 @@ from typing import Optional, Dict
 import torch
 import torchvision
 import pytorch_lightning as pl
+from pytorch_lightning.loggers import LoggerCollection, TensorBoardLogger
 
 
 class ImageLogger(pl.Callback):
@@ -77,20 +78,20 @@ class ImageLogger(pl.Callback):
 
         grid = torchvision.utils.make_grid(tensor=data, nrow=len(self.RGB) + 2)
 
-        try:    # TODO: Better implementation of this. pl is changing multi logger api...
+        if isinstance(trainer.logger, LoggerCollection):
+            for logger in trainer.logger:
+                if isinstance(logger, TensorBoardLogger):
+                    logger.experiment.add_image(f"{mode}_images", grid, global_step=trainer.global_step)
+        elif isinstance(trainer.logger, TensorBoardLogger):
             trainer.logger.experiment.add_image(f"{mode}_images", grid, global_step=trainer.global_step)
-        except:
-            print('Image logger failed!')
-        try:    # This works for tensorboard as 1st logger if several
-            trainer.logger.experiment[0].add_image(f"{mode}_images", grid, global_step=trainer.global_step)
-        except:
-            print('Image logger failed!')
 
+    @torch.no_grad()
     def on_validation_epoch_end(self, trainer: pl.Trainer, plModel: pl.LightningModule) -> None:
         if self.log_valid and plModel.log_images['valid'] is not None:
             images, targets, prob = plModel.log_images['valid']
             self._log_batch_predictions(trainer, images, targets, prob, 'valid')
 
+    @torch.no_grad()
     def on_train_epoch_end(self, trainer: pl.Trainer, plModel: pl.LightningModule) -> None:
         if self.log_train and plModel.log_images['train'] is not None:
             images, targets, prob = plModel.log_images['train']
