@@ -20,13 +20,36 @@ class ImageLogger(pl.Callback):
         """
         Inputs:
         ------
-        RGB: Dict[List[int]]: len(RGB) is the amount of images to show in RGB.
-             The combination of bands to associate to RGB is given in the values of the dictionary.
-             The key string is unimportant. default: {'image': [3,2,1]}
+        RGB_image: dict
+            Dict[List[int]]: len(RGB) is the amount of images to show in RGB.
+            The combination of bands to associate to RGB is given in the values of the dictionary.
+            The key string is unimportant. default: {'image': [0,1,2]}
 
-        normalize: bool: if True, normalizes all the bands of all the images in the batch between 0.1 and 99.9 percentiles
-        num_images: int: number of images in the batch to log.
+        RGB_target: dict
+            Dict[List[int]]: len(RGB) is the amount of target images to show in RGB.
+            The combination of bands to associate to RGB is given in the values of the dictionary.
+            The key string is unimportant. default: {'image': [0,0,0]}
+            To use in conjunction with log_probabilities=True.
 
+        RGB_output: dict
+            Dict[List[int]]: len(RGB) is the amount of output images to show in RGB.
+            The combination of bands to associate to RGB is given in the values of the dictionary.
+            The key string is unimportant. default: {'image': [0,0,0]}
+            To use in conjunction with log_probabilities=True.
+
+        log_probabilities: bool
+            if True, RGB_target and RGB_output are used.
+            if False, the classes are obtained and given unique colors (max 27 classes).
+
+        normalize: bool
+            if True, normalizes all the bands of all the images in the batch between 0.1 and 99.9 percentiles
+
+        num_images: int
+            number of images in the batch to log.
+
+        on_train_epoch_end: bool
+
+        on_validation_epoch_end: bool
         """
         super().__init__()
         self.RGB_image = RGB_image if RGB_image is not None else {}
@@ -59,7 +82,7 @@ class ImageLogger(pl.Callback):
 
         return (image - min_im) / (max_im - min_im)
 
-    def _log_batch_predictions(self, trainer, images, targets, probabilities, mode):
+    def _log_batch_predictions(self, trainer, plModel, images, targets, probabilities, mode):
         ''' Log all images in a batch, targets and probabilities
 
         Log each images in the batch as RGB images, their targets and the predicted probabilities
@@ -69,6 +92,7 @@ class ImageLogger(pl.Callback):
 
         # Loop though each images in batch
         N = min(self.num_images, images.shape[0]) if self.num_images is not None else images.shape[0]
+
         for i in range(N):
             image = images[i]
             rgb_img = []
@@ -76,20 +100,33 @@ class ImageLogger(pl.Callback):
                 rgb_img.append(image[rgb, ...])
 
             target_rgb = []
-            for rgb in self.RGB_target.values():
-                target_rgb.append(targets[i][rgb])
+            pred_rgb = []
+            # If log probabilities, we want to show the classes with the same colors as for the predictions
+            if self.log_probabilities:
+                for rgb in self.RGB_target.values():
+                    target_rgb.append(targets[i][rgb])
+                for rgb in self.RGB_output.values():
+                    pred_rgb.append(probabilities[i][rgb])
+            else:
+                target = torch.tensor([self.cmap[x.item()] for x in targets[i].reshape(-1)], device=image.device)
+                target = target.reshape(image.shape[-2], image.shape[-1], 3).permute(2, 0, 1)   # (3,H,W)
+                target_rgb.append(target)
 
-            prob_rgb = []
-            for rgb in self.RGB_output.values():
-                prob_rgb.append(probabilities[i][rgb])
+                # Convert proba to classes first
+                cls = plModel.probs_to_classes(probabilities[[i]])
+                if cls.shape[1] != 1:   # i.e. multilabel
+                    cls = cls.argmax(dim=1)
+                pred = torch.tensor([self.cmap[x.item()] for x in cls.reshape(-1)], device=image.device)
+                pred = pred.reshape(image.shape[-2], image.shape[-1], 3).permute(2, 0, 1)
+                pred_rgb.append(pred)
 
             if i == 0:
-                data = torch.stack([*rgb_img, *target_rgb, *prob_rgb], dim=0)
+                data = torch.stack([*rgb_img, *target_rgb, *pred_rgb], dim=0)
             else:
-                data = torch.cat([data, torch.stack([*rgb_img, *target_rgb, *prob_rgb], dim=0)], dim=0)
+                data = torch.cat([data, torch.stack([*rgb_img, *target_rgb, *pred_rgb], dim=0)], dim=0)
 
         grid = torchvision.utils.make_grid(tensor=data,
-                                           nrow=len(rgb_img) + len(target_rgb) + len(prob_rgb))
+                                           nrow=len(rgb_img) + len(target_rgb) + len(pred_rgb))
 
         for logger in trainer.loggers:
             if isinstance(logger, TensorBoardLogger):
@@ -99,16 +136,17 @@ class ImageLogger(pl.Callback):
     def on_validation_epoch_end(self, trainer: pl.Trainer, plModel: pl.LightningModule) -> None:
         if self.log_valid and plModel.log_images['valid'] is not None:
             images, targets, prob = plModel.log_images['valid']
-            self._log_batch_predictions(trainer, images, targets, prob, 'valid')
+            self._log_batch_predictions(trainer, plModel, images, targets, prob, 'valid')
 
     @torch.no_grad()
     def on_train_epoch_end(self, trainer: pl.Trainer, plModel: pl.LightningModule) -> None:
         if self.log_train and plModel.log_images['train'] is not None:
             images, targets, prob = plModel.log_images['train']
-            self._log_batch_predictions(trainer, images, targets, prob, 'train')
+            self._log_batch_predictions(trainer, plModel, images, targets, prob, 'train')
 
     def _get_colormap(self):
         cmap = {
+            -1: [0, 0, 0],
             0: [255, 255, 255],
             1: [240, 163, 255],
             2: [0, 117, 220],
