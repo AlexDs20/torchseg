@@ -1,22 +1,25 @@
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
+from torchvision.transforms.transforms import ToTensor
 
-from utilities.raster.operations import make_subtiles, unmake_subtiles
-
-from torchseg.trainer import plModel
+from torchseg.plModel import plModel
+from torchseg.utils import make_subtiles, unmake_subtiles
+from torchseg.dataset import InferenceDataSet
 
 
 @torch.no_grad()
-def inference(data: np.ndarray, config: dict, model: str, batch_size: int = None, cut_size: int = None, proba_output: bool = True, device: int = 'cpu') -> np.ndarray:
+def inference(data: np.ndarray, model: str, batch_size: int = None, cut_size: int = None, out_type: str = 'prob', device: int = 'cpu') -> np.ndarray:
     """ General inference function
 
     Input:
     -----
     data: numpy array of the prepared data containing the right layers with the correct preprocessing for each layer, the image can be any size (C,H,W)
-    config: dictionay configuration file that was used for training the model
     batch_size: the size of the batch to send through the model at once
-    proba_output: Optional[default=True] to say whether to output probability (default) or classes (False)
+    output: str
+        - prob
+        - logits
+        - classes
 
     Output:
     ------
@@ -36,27 +39,23 @@ def inference(data: np.ndarray, config: dict, model: str, batch_size: int = None
     # Check data dim
     if data.dim() == 3:
         data = data.unsqueeze(0)
-    elif data.dim() == 4:
-        if cut_size is not None:
-            raise ValueError('Batched inputs with cutsize is not implemented yet.')
-        else:
-            pass
-    else:
+    elif data.dim() != 4:
         raise ValueError(f'Input data with {data.dim()} dimensions. Only 3 or 4 dimensions allowed.')
 
-    data = data.to(device)
-
     # Load model
-    model = plModel.load_from_checkpoint(model, config=config, device=device)
+    config = torch.load(model)['hyper_parameters']['config']
+    model = plModel.load_from_checkpoint(model, config=config)
+    model = model.to(device)
     model.eval()
 
     if cut_size is None:    # Predict on the whole image at once, this is OK as long as we have pure convolutional model
-        logits = model(data, device=device)
+        data = data.to(device)
+        output = model(data)
 
     # If not pure convolutional model, we should use this, or better: smooth tile prediction (not implemented)
     else:
         # Here do some padding, for the moment, just doing minimal functional
-        c, h, w = data.shape
+        n, c, h, w = data.shape
         add_h = cut_size - (h - (h // cut_size) * cut_size)
         add_w = cut_size - (w - (w // cut_size) * cut_size)
         data = torch.nn.functional.pad(data, (0, add_w, 0, add_h, 0, 0), mode='reflect')
@@ -65,23 +64,21 @@ def inference(data: np.ndarray, config: dict, model: str, batch_size: int = None
         subtiles = make_subtiles(data, cut_size, cut_size)
 
         # Run inference by batches
-        logits = torch.zeros((subtiles.shape[0], config['model']['head']['out_channels'], cut_size, cut_size), device=device)
+        logits = torch.zeros((subtiles.shape[0], config['model']['head']['out_channels'], cut_size, cut_size))
 
         for bi in range(0, subtiles.shape[0], batch_size):
             be = bi + batch_size if bi + batch_size < subtiles.shape[0] else subtiles.shape[0]
-            logits[bi:be] = model(subtiles[bi:be])
+            logits[bi:be] = model(subtiles[bi:be].to(device))
 
         # Put back to original shape
         logits = unmake_subtiles(logits, data.shape[-2], data.shape[-1])
 
         # Remove padding
-        logits = logits[:, :h, :w]
+        output = logits[:, :, :h, :w]
 
-    # Get probabilities
-    proba = model.logits_to_prob(logits)
-
-    # Convert to classes if wanted
-    if not proba_output:
-        output = model.probs_to_classes(proba)
+    if out_type != 'logits':
+        output = model.logits_to_prob(output)
+        if out_type == 'classes':
+            output = model.probs_to_classes(output)
 
     return output.cpu().numpy()
