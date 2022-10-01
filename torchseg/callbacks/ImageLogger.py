@@ -3,7 +3,7 @@ from typing import Optional, Dict
 import torch
 import torchvision
 import pytorch_lightning as pl
-from pytorch_lightning.loggers import LoggerCollection, TensorBoardLogger
+from pytorch_lightning.loggers import TensorBoardLogger
 
 
 class ImageLogger(pl.Callback):
@@ -78,12 +78,9 @@ class ImageLogger(pl.Callback):
 
         grid = torchvision.utils.make_grid(tensor=data, nrow=len(self.RGB) + 2)
 
-        if isinstance(trainer.logger, LoggerCollection):
-            for logger in trainer.logger:
-                if isinstance(logger, TensorBoardLogger):
-                    logger.experiment.add_image(f"{mode}_images", grid, global_step=trainer.global_step)
-        elif isinstance(trainer.logger, TensorBoardLogger):
-            trainer.logger.experiment.add_image(f"{mode}_images", grid, global_step=trainer.global_step)
+        for logger in trainer.loggers:
+            if isinstance(logger, TensorBoardLogger):
+                logger.experiment.add_image(f"{mode}_images", grid, global_step=trainer.global_step)
 
     @torch.no_grad()
     def on_validation_epoch_end(self, trainer: pl.Trainer, plModel: pl.LightningModule) -> None:
