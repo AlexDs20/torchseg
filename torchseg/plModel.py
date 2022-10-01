@@ -20,18 +20,19 @@ class plModel(pl.LightningModule):
         self.config = config
 
         self.model = Model(config['model'])
-        self.train_loss = get_loss(config['loss']['train'])
-        self.valid_loss = get_loss(config['loss']['valid'])
+        self.loss = {"train": get_loss(config['loss']['train']),
+                     "valid": get_loss(config['loss']['valid']),
+                     "test": get_loss(config['loss']['valid'])}
         self.metrics = {"train": get_metrics(config['metrics']['train']),
                         "valid": get_metrics(config['metrics']['valid']),
-                        "test": None}
+                        "test": get_metrics(config['metrics']['valid'])}
 
         self.optim = get_optimizer(config['optimizer'])
         self.lr_scheduler = get_lr_scheduler(config['lr_scheduler'])
 
-        self.log_images = {'train': None,
-                           'valid': None,
-                           'test': None}
+        self.log_images = {"train": None,
+                           "valid": None,
+                           "test": None}
 
     def forward(self, x):
         out = self.model(x)
@@ -45,58 +46,56 @@ class plModel(pl.LightningModule):
         else:
             return optimizer
 
-    def training_step(self, batch, batch_idx):
+    def _process_step(self, batch, batch_idx, stage, log_batch_idx=None):
+        # Forward pass
         x, y = batch
         logits = self.model(x)
-        prob = self.logits_to_prob(logits)
 
+        # Get loss
         loss = 0
-        for weight, loss_func in self.train_loss:
+        for weight, loss_func in self.loss[stage]:
             loss += weight * loss_func(logits, y)
 
         # Logging to TensorBoard by default
-        self.log("train/loss", loss)
+        self.log(f"{stage}/loss", loss)
 
-        # Cache data for the log images callback
-        if batch_idx == self.trainer.num_training_batches - 2:
-            self.log_images['train'] = [x.detach(), y.detach(), prob.detach()]
+        # Compute statistics for metrics
+        mode = self.config['data']['processing']['mode']
+        ignore_index = self.config['data']['processing']['ignore_index']
 
         # TODO  implement this as a torchmetrics metrics class with this link:
         # https://torchmetrics.readthedocs.io/en/stable/pages/implement.html
 
-        mode = self.config['data']['processing']['mode']
-        ignore_index = self.config['data']['processing']['ignore_index']
+        prob = self.logits_to_prob(logits)
         classes = self.probs_to_classes(prob)
         tp, fp, fn, tn = MF.get_stats(classes, y, mode=mode, ignore_index=ignore_index)
-        self._log_metrics([{'tp': tp, 'fp': fp, 'fn': fn, 'tn': tn}], 'train')
 
-        return {'loss': loss, 'tp': tp, 'fp': fp, 'fn': fn, 'tn': tn}
+        # Save images for logging
+        if batch_idx == log_batch_idx:
+            self.log_images[f'{stage}'] = [x, y, prob]
+
+        if stage == 'valid':
+            # Log hp metric
+            self.log("hp_metric", loss)
+            loss_name = 'valid/loss'
+        elif stage == 'train':
+            loss_name = 'loss'
+        elif stage == 'test':
+            loss_name = 'test/loss'
+
+        return {loss_name: loss, 'tp': tp, 'fp': fp, 'fn': fn, 'tn': tn}
+
+    def training_step(self, batch, batch_idx):
+        log_batch_idx = self.trainer.num_training_batches - 2
+        return self._process_step(batch, batch_idx, 'train', log_batch_idx)
 
     def validation_step(self, batch, batch_idx):
-        x, y = batch
-        logits = self.model(x)
-        prob = self.logits_to_prob(logits)
+        log_batch_idx = self.trainer.num_val_batches[0] - 2
+        return self._process_step(batch, batch_idx, 'valid', log_batch_idx)
 
-        loss = 0
-        for weight, loss_func in self.valid_loss:
-            loss += weight * loss_func(logits, y)
-
-        # Logging to TensorBoard by default
-        self.log("valid/loss", loss)
-
-        # Cache data for the log images callback
-        if batch_idx == self.trainer.num_val_batches[0] - 2:
-            self.log_images['valid'] = [x.detach(), y.detach(), prob.detach()]
-
-        # Log metrics
-        self.log("hp_metric", loss)
-
-        mode = self.config['data']['processing']['mode']
-        ignore_index = self.config['data']['processing']['ignore_index']
-        classes = self.probs_to_classes(prob)
-        tp, fp, fn, tn = MF.get_stats(classes, y, mode=mode, ignore_index=ignore_index)
-
-        return {'valid/loss': loss, 'tp': tp, 'fp': fp, 'fn': fn, 'tn': tn}
+    def test_step(self, batch, batch_idx):
+        log_batch_idx = self.trainer.num_val_batches[0] - 2
+        return self._process_step(batch, batch_idx, 'test', log_batch_idx)
 
     def _log_metrics(self, outputs, stage):
         tp = torch.cat([x["tp"] for x in outputs])
@@ -114,6 +113,10 @@ class plModel(pl.LightningModule):
     def validation_epoch_end(self, outputs):
         return self._log_metrics(outputs, 'valid')
 
+    def test_epoch_end(self, outputs):
+        return self._log_metrics(outputs, 'test')
+
+    @torch.no_grad()
     def logits_to_prob(self, logits):
         if self.config['data']['processing']['mode'] == 'multiclass':
             prob = F.log_softmax(logits.detach(), dim=1).exp()
@@ -121,6 +124,7 @@ class plModel(pl.LightningModule):
             prob = F.logsigmoid(logits.detach()).exp()
         return prob
 
+    @torch.no_grad()
     def probs_to_classes(self, prob, threshold=0.5):
         if self.config['data']['processing']['mode'] == 'multiclass':
             classes = prob.argmax(dim=1)

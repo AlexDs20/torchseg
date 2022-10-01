@@ -53,6 +53,7 @@ model:
 data:
     train_folder: 'data/train'
     valid_folder: 'data/valid'
+    test_folder: 'data/test'
 
     processing:
         ignore_index: &ignore_index 2
@@ -65,6 +66,14 @@ dataloader:
     valid:
         batch_size: 2
         num_workers: 2
+    test:
+        batch_size: 2
+        num_workers: 2
+
+run:
+    train: True
+    valid: True
+    test: True
 
 trainer:
     max_epochs: 10
@@ -119,6 +128,14 @@ metrics:
         Recall:
             reduction: 'micro'
 
+    test:
+        Accuracy:
+            reduction: 'micro'
+        Precision:
+            reduction: 'micro'
+        Recall:
+            reduction: 'micro'
+
 loss:
     train:
         FocalLoss:
@@ -128,6 +145,16 @@ loss:
             gamma: 2
             ignore_index: *ignore_index
     valid:
+        DiceLoss:
+            weight: 0.5
+            mode: *mode
+            ignore_index: *ignore_index
+        FocalLoss:
+            weight: 0.5
+            mode: *mode
+            ignore_index: *ignore_index
+
+    test:
         DiceLoss:
             weight: 0.5
             mode: *mode
