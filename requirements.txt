@@ -1,5 +1,7 @@
+Pillow
 pytorch-lightning
 pyyaml
 tensorboard
 torch
 torchmetrics
+torchvision
