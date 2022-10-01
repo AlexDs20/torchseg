@@ -53,6 +53,7 @@ model:
 data:
     train_folder: 'data/train'
     valid_folder: 'data/valid'
+    test_folder: 'data/test'
 
     processing:
         ignore_index: &ignore_index 2
@@ -68,6 +69,11 @@ dataloader:
     test:
         batch_size: 2
         num_workers: 2
+
+run:
+    train: True
+    valid: True
+    test: True
 
 trainer:
     max_epochs: 10
