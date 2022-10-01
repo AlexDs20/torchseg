@@ -48,3 +48,33 @@ class FolderDataSet(Dataset):
 
         # TODO: Fix how target dtype is handled
         return image, target.to(torch.long)
+
+
+class InferenceDataSet(Dataset):
+    def __init__(self, path: str,
+                 image_transforms=None):
+        super(InferenceDataSet, self).__init__()
+
+        if os.path.isdir(path):
+            self.images = [os.path.join(path, f) for f in os.listdir(os.path.join(path))]
+        elif os.path.isfile(path):
+            self.images = [path]
+        else:
+            raise ValueError(f'Wrong input path to file/folder: {path}.')
+
+        self.image_transforms = image_transforms
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, idx):
+        file_path = self.images[idx]
+
+        # Read the file
+        image = _load_file(file_path)
+
+        # Apply transforms
+        if self.image_transforms is not None:
+            image = self.image_transforms(image)
+
+        return image
