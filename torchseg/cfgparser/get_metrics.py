@@ -12,11 +12,10 @@ def get_metrics(config):
         "Recall": MF.recall
     }
     all_metrics = {}
-    try:
-        if config is not None:
-            for key, val in config.items():
-                func = partial(conv[key], **val) if val is not None else conv[key]
-                all_metrics.update({key: func})
-        return all_metrics
-    except:
-        print(f'Error with the input metric(s) {config}')
+
+    if config is not None:
+        for key, val in config.items():
+            attr = getattr(MF, key) if hasattr(MF, key) else conv[key]
+            func = partial(attr, **val) if val is not None else attr
+            all_metrics.update({key: func})
+    return all_metrics
