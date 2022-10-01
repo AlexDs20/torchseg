@@ -2,14 +2,8 @@ from pytorch_lightning import loggers
 
 
 def get_loggers(config):
-    conv = {
-        'CometLogger': loggers.CometLogger,
-        'CSVLogger': loggers.CSVLogger,
-        'MLFlowLogger': loggers.MLFlowLogger,
-        'NeptuneLogger': loggers.NeptuneLogger,
-        'TensorBoardLogger': loggers.TensorBoardLogger,
-        'WandbLogger': loggers.WandbLogger,
-    }
+    conv = {}
+
     if config is None:
         return loggers.MLFlowLogger()
     elif config is False:
@@ -17,6 +11,7 @@ def get_loggers(config):
     else:
         logs = []
         for key, val in config.items():
-            func = conv[key](**val) if val is not None else conv[key]()
+            attr = getattr(loggers, key) if hasattr(loggers, key) else conv[key]
+            func = attr(**val) if val is not None else attr()
             logs.append(func)
         return logs

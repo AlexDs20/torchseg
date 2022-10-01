@@ -4,10 +4,6 @@ from torchseg.callbacks.ImageLogger import ImageLogger
 
 def get_callbacks(config):
     conv = {
-        'ModelCheckpoint': callbacks.ModelCheckpoint,
-        'LearningRateMonitor': callbacks.LearningRateMonitor,
-        'EarlyStopping': callbacks.EarlyStopping,
-        'DeviceStatsMonitor': callbacks.DeviceStatsMonitor,
         'ImageLogger': ImageLogger,
     }
 
@@ -15,7 +11,8 @@ def get_callbacks(config):
     try:
         if config is not None:
             for key, val in config.items():
-                func = conv[key](**val) if val is not None else conv[key]()
+                attr = getattr(callbacks, key) if hasattr(callbacks, key) else conv[key]
+                func = attr(**val) if val is not None else attr()
                 cb.append(func)
             return cb
     except ValueError:

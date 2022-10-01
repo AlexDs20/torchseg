@@ -1,13 +1,10 @@
 import copy
 import torch.nn as nn
-from torchseg.losses import FocalLoss
-from torchseg.losses import DiceLoss
+from torchseg.losses import FocalLoss, DiceLoss
 
 
 def get_loss(config):
     conv = {
-        'CrossEntropyLoss': nn.CrossEntropyLoss,
-        'BCEWithLogitsLoss': nn.BCEWithLogitsLoss,
         'FocalLoss': FocalLoss,
         'DiceLoss': DiceLoss
     }
@@ -20,7 +17,8 @@ def get_loss(config):
                 weight = val.pop('weight')
             else:
                 weight = 1
-            func = conv[key](**val) if val is not None else conv[key]()
+            attr = getattr(nn, key) if hasattr(nn, key) else conv[key]
+            func = attr(**val) if val is not None else attr()
             all_losses.append([weight, func])
         return all_losses
     except ValueError:

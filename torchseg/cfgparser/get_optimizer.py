@@ -3,25 +3,13 @@ from torch import optim
 
 
 def get_optimizer(config):
-    conv = {
-        'Adadelta': optim.Adadelta,
-        'Adagrad': optim.Adagrad,
-        'Adam': optim.Adam,
-        'AdamW': optim.AdamW,
-        'SparseAdam': optim.SparseAdam,
-        'Adamax': optim.Adamax,
-        'ASGD': optim.ASGD,
-        'LBFGS': optim.LBFGS,
-        'NAdam': optim.NAdam,
-        'RAdam': optim.RAdam,
-        'RMSprop': optim.RMSprop,
-        'SGD': optim.SGD,
-    }
+    conv = {}
 
     try:
         # Currently only support 1 entry
         for key, val in config.items():
-            func = partial(conv[key], **val) if val is not None else conv[key]()
+            attr = getattr(optim, key) if hasattr(optim, key) else conv[key]
+            func = partial(attr, **val) if val is not None else attr()
             return func
     except ValueError:
         print(f'Error with the optimizer: {config}')
