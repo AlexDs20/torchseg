@@ -1,5 +1,5 @@
-from torchseg.callbacks.ImageLogger import ImageLogger
 from pytorch_lightning import callbacks
+from torchseg.callbacks.ImageLogger import ImageLogger
 
 
 def get_callbacks(config):

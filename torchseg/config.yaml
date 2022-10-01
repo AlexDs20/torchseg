@@ -113,8 +113,13 @@ callbacks:
         monitor: 'valid/loss'
 
     ImageLogger:
-        RGB:
+        RGB_image:
             image1: [0,1,2]
+            image2: [2,1,0]
+        RGB_target:
+            image1: [0,0,0]
+        RGB_output:
+            image1: [0,0,0]
         normalize: True
         num_images:
         on_validation_epoch_end: True
