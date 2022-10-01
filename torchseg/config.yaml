@@ -121,6 +121,7 @@ callbacks:
         RGB_output:
             image1: [0,0,0]
         normalize: True
+        log_probabilities: False
         num_images:
         on_validation_epoch_end: True
         on_train_epoch_end: True
