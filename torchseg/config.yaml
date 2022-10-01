@@ -56,8 +56,34 @@ data:
     test_folder: 'data/test'
 
     processing:
-        ignore_index: &ignore_index 2
+        ignore_index: &ignore_index -1
         mode: &mode 'binary'
+
+dataset:
+    train:
+        FolderDataSet:
+            image_transforms:
+                ToTensor:
+                CenterCrop: 128
+            target_transforms:
+                ToTensor:
+                CenterCrop: 128
+    valid:
+        FolderDataSet:
+            image_transforms:
+                ToTensor:
+                CenterCrop: 128
+            target_transforms:
+                ToTensor:
+                CenterCrop: 128
+    test:
+        FolderDataSet:
+            image_transforms:
+                ToTensor:
+                CenterCrop: 128
+            target_transforms:
+                ToTensor:
+                CenterCrop: 128
 
 dataloader:
     train:
