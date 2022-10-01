@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 
 from torchseg.dataset import FolderDataSet
-from torchseg.cfgparser import get_callbacks, get_loggers
+from torchseg.cfgparser import get_callbacks, get_loggers, get_dataloader
 from torchseg.transfer_learning import transfer_learning
 from .plModel import plModel
 
@@ -14,9 +14,9 @@ def run(cfg_file):
     with open(cfg_file) as cfg:
         config = yaml.load(cfg, Loader=yaml.Loader)
 
-    train_dataloader = DataLoader(FolderDataSet(config['data']['train_folder']), **config['dataloader']['train'])
-    valid_dataloader = DataLoader(FolderDataSet(config['data']['valid_folder']), **config['dataloader']['valid'])
-    test_dataloader = DataLoader(FolderDataSet(config['data']['test_folder']), **config['dataloader']['test'])
+    train_dataloader = get_dataloader(config, 'train')
+    valid_dataloader = get_dataloader(config, 'valid')
+    test_dataloader = get_dataloader(config, 'test')
 
     callbacks = get_callbacks(config['callbacks'])
     loggers = get_loggers(config['loggers'])

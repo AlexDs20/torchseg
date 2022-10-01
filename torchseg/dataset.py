@@ -1,57 +1,50 @@
 import os
-from torch.utils.data import Dataset
 
 import numpy as np
 from PIL import Image
+import torch
+from torch.utils.data import Dataset
 
 
 def _load_file(path):
     ext = os.path.splitext(path)[1]
-    if ext == '.npy':
-        data = np.load(path)
-    elif ext == '.png':
-        data = np.array(Image.open(path))
+    if ext == '.png':
+        data = Image.open(path)
     else:
         raise ValueError(f'Extension {ext} not implemented!')
     return data
 
 
 class FolderDataSet(Dataset):
-    def __init__(self, path: str):
+    def __init__(self, path: str,
+                 image_transforms=None,
+                 target_transforms=None):
         super(FolderDataSet, self).__init__()
         image_folder = 'images'
-        label_folder = 'labels'
+        target_folder = 'targets'
 
         self.images = [os.path.join(path, image_folder, f) for f in os.listdir(os.path.join(path, image_folder))]
-        self.labels = [os.path.join(path, label_folder, os.path.basename(f)) for f in self.images]
+        self.targets = [os.path.join(path, target_folder, os.path.basename(f)) for f in self.images]
+
+        self.image_transforms = image_transforms
+        self.target_transforms = target_transforms
 
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, idx):
         file_path = self.images[idx]
-        label_path = self.labels[idx]
+        target_path = self.targets[idx]
 
         # Read the file
-        image = np.moveaxis(_load_file(file_path), -1, 0).astype(np.float32)
-        label = _load_file(label_path)[None].astype(int)
-        return image, label
+        image = _load_file(file_path)
+        target = _load_file(target_path)
 
+        # Apply transforms
+        if self.image_transforms is not None:
+            image = self.image_transforms(image)
+        if self.target_transforms is not None:
+            target = self.target_transforms(target)
 
-class StackedDataSet(Dataset):
-    def __init__(self, path: str):
-        super(StackedDataSet, self).__init__()
-        self.images = [os.path.join(path, f) for f in os.listdir(path)]
-
-    def __len__(self):
-        return len(self.images)
-
-    def __getitem__(self, idx):
-        file_path = self.images[idx]
-
-        # Read the file
-        data = _load_file(file_path)
-        image = data[:-1]
-        label = data[-1].astype(int)
-
-        return image, label
+        # TODO: Fix how target dtype is handled
+        return image, target.to(torch.long)
