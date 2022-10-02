@@ -4,6 +4,7 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 
+from torchseg.losses import MULTICLASS_MODE
 from torchseg.model import Model
 from torchseg.dataset import FolderDataSet
 from torchseg.transfer_learning import transfer_learning
@@ -118,7 +119,7 @@ class plModel(pl.LightningModule):
 
     @torch.no_grad()
     def logits_to_prob(self, logits):
-        if self.config['data']['processing']['mode'] == 'multiclass':
+        if self.config['data']['processing']['mode'] == MULTICLASS_MODE:
             prob = F.log_softmax(logits.detach(), dim=1).exp()
         else:
             prob = F.logsigmoid(logits.detach()).exp()
@@ -126,7 +127,7 @@ class plModel(pl.LightningModule):
 
     @torch.no_grad()
     def probs_to_classes(self, prob, threshold=0.5):
-        if self.config['data']['processing']['mode'] == 'multiclass':
+        if self.config['data']['processing']['mode'] == MULTICLASS_MODE:
             classes = prob.argmax(dim=1)
         else:
             classes = torch.where(prob > threshold, 1, 0)
