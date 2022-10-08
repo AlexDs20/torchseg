@@ -132,9 +132,6 @@ callbacks:
 loggers:
     TensorBoardLogger:
         save_dir: 'run/lightning_logs'
-    WandbLogger:
-        save_dir: 'run/wandb'
-        project: 'test'
 
 optimizer:
     Adam:
@@ -146,26 +143,36 @@ lr_scheduler:
 metrics:
     train:
         Accuracy:
+            mode: *mode
+            threshold: 0.5
+            reduction: 'micro'
+        F1Score:
+            mode: *mode
+            threshold: 0.5
+            reduction: 'micro'
+        IoUScore:
+            mode: *mode
+            threshold: 0.5
             reduction: 'micro'
         Precision:
+            mode: *mode
+            threshold: 0.5
             reduction: 'micro'
         Recall:
+            mode: *mode
+            threshold: 0.5
             reduction: 'micro'
 
     valid:
         Accuracy:
-            reduction: 'micro'
-        Precision:
-            reduction: 'micro'
-        Recall:
+            mode: *mode
+            threshold: 0.5
             reduction: 'micro'
 
     test:
         Accuracy:
-            reduction: 'micro'
-        Precision:
-            reduction: 'micro'
-        Recall:
+            mode: *mode
+            threshold: 0.5
             reduction: 'micro'
 
 loss:

@@ -4,6 +4,7 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 
+from torchseg.losses import MULTICLASS_MODE
 from torchseg.model import Model
 from torchseg.dataset import FolderDataSet
 from torchseg.transfer_learning import transfer_learning
@@ -22,10 +23,13 @@ class plModel(pl.LightningModule):
         self.model = Model(config['model'])
         self.loss = {"train": get_loss(config['loss']['train']),
                      "valid": get_loss(config['loss']['valid']),
-                     "test": get_loss(config['loss']['valid'])}
+                     "test": get_loss(config['loss']['valid'])
+                     }
+
         self.metrics = {"train": get_metrics(config['metrics']['train']),
                         "valid": get_metrics(config['metrics']['valid']),
-                        "test": get_metrics(config['metrics']['valid'])}
+                        "test": get_metrics(config['metrics']['valid'])
+                        }
 
         self.optim = get_optimizer(config['optimizer'])
         self.lr_scheduler = get_lr_scheduler(config['lr_scheduler'])
@@ -59,31 +63,19 @@ class plModel(pl.LightningModule):
         # Logging to TensorBoard by default
         self.log(f"{stage}/loss", loss)
 
-        # Compute statistics for metrics
-        mode = self.config['data']['processing']['mode']
-        ignore_index = self.config['data']['processing']['ignore_index']
-
-        # TODO  implement this as a torchmetrics metrics class with this link:
-        # https://torchmetrics.readthedocs.io/en/stable/pages/implement.html
-
+        # Log metrics
         prob = self.logits_to_prob(logits)
-        classes = self.probs_to_classes(prob)
-        tp, fp, fn, tn = MF.get_stats(classes, y, mode=mode, ignore_index=ignore_index)
+        for name, metric in self.metrics[stage].items():
+            self.log(f"{stage}/{name}_step", metric(prob, y))
 
         # Save images for logging
         if batch_idx == log_batch_idx:
-            self.log_images[f'{stage}'] = [x, y, prob]
+            self.log_images[stage] = [x, y, prob]
 
         if stage == 'valid':
             # Log hp metric
             self.log("hp_metric", loss)
-            loss_name = 'valid/loss'
-        elif stage == 'train':
-            loss_name = 'loss'
-        elif stage == 'test':
-            loss_name = 'test/loss'
-
-        return {loss_name: loss, 'tp': tp, 'fp': fp, 'fn': fn, 'tn': tn}
+        return {'loss': loss}
 
     def training_step(self, batch, batch_idx):
         log_batch_idx = self.trainer.num_training_batches - 2
@@ -97,28 +89,21 @@ class plModel(pl.LightningModule):
         log_batch_idx = self.trainer.num_val_batches[0] - 2
         return self._process_step(batch, batch_idx, 'test', log_batch_idx)
 
-    def _log_metrics(self, outputs, stage):
-        tp = torch.cat([x["tp"] for x in outputs])
-        fp = torch.cat([x["fp"] for x in outputs])
-        fn = torch.cat([x["fn"] for x in outputs])
-        tn = torch.cat([x["tn"] for x in outputs])
-
-        for name, metric in self.metrics[stage].items():
-            value = metric(tp, fp, fn, tn)
-            self.log(f'{stage}/{name}', value)
-
     def training_epoch_end(self, outputs):
-        return self._log_metrics(outputs, 'train')
+        for name, metric in self.metrics["train"].items():
+            self.log(f'train/{name}_epoch', metric.compute())
 
     def validation_epoch_end(self, outputs):
-        return self._log_metrics(outputs, 'valid')
+        for name, metric in self.metrics["valid"].items():
+            self.log(f'valid/{name}_epoch', metric.compute())
 
     def test_epoch_end(self, outputs):
-        return self._log_metrics(outputs, 'test')
+        for name, metric in self.metrics["test"].items():
+            self.log(f'test/{name}_epoch', metric.compute())
 
     @torch.no_grad()
     def logits_to_prob(self, logits):
-        if self.config['data']['processing']['mode'] == 'multiclass':
+        if self.config['data']['processing']['mode'] == MULTICLASS_MODE:
             prob = F.log_softmax(logits.detach(), dim=1).exp()
         else:
             prob = F.logsigmoid(logits.detach()).exp()
@@ -126,7 +111,7 @@ class plModel(pl.LightningModule):
 
     @torch.no_grad()
     def probs_to_classes(self, prob, threshold=0.5):
-        if self.config['data']['processing']['mode'] == 'multiclass':
+        if self.config['data']['processing']['mode'] == MULTICLASS_MODE:
             classes = prob.argmax(dim=1)
         else:
             classes = torch.where(prob > threshold, 1, 0)
