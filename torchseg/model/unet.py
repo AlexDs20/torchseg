@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -57,51 +59,84 @@ class Encoder(nn.Module):
     def __init__(self, parameters):
         super(Encoder, self).__init__()
 
-        self.Conv = nn.ModuleList()
-        self.MaxPool = nn.ModuleList()
+        self.block = nn.ModuleDict({})
+        self.down = nn.ModuleDict({})
 
         for i, (key, val) in enumerate(parameters.items()):
-            self.Conv.append(DoubleConv(**val))
+            if val['name'] == 'DoubleConv':
+                v = deepcopy(val)
+                del v['name']
+                self.block[key] = DoubleConv(**v)
+
             if i != len(parameters):
-                self.MaxPool.append(nn.MaxPool2d(kernel_size=2, stride=2))
+                self.down[key] = nn.MaxPool2d(kernel_size=2, stride=2)
 
     def forward(self, x):
-        features = []
+        features = {}
         out = x
-        for i in range(len(self.Conv)):
-            out = self.Conv[i](out)
-            if i < len(self.MaxPool):
-                features.append(out)
-                out = self.MaxPool[i](out)
+        for key, val in self.block.items():
+            out = self.block[key](out)
+            features[key] = out
+            if key in self.down:
+                out = self.down[key](out)
         return features
 
 
-class Decoder(nn.Module):
-    def __init__(self, parameters):
-        super(Decoder, self).__init__()
+class Empty(nn.Module):
+    def forward(self, x):
+        return torch.zeros(x.shape[0], 0, *x.shape[-2:], device=x.device)
 
-        encoder_params = parameters['encoder']
-        decoder_params = parameters['decoder']
 
-        encoder_out_channels = [layer['out_channels'] for layer in encoder_params.values()]
+class Middle(nn.Module):
+    def __init__(self, params):
+        super().__init__()
+        self.middle = nn.ModuleDict({})
 
-        self.Conv = nn.ModuleList()
-        self.Up = nn.ModuleList()
-
-        for i, (key, val) in enumerate(decoder_params.items()):
-            in_channels = val['in_channels']
-            out_channels = val['out_channels']
-
-            self.Up.append(nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2))
-            self.Conv.append(DoubleConv(in_channels=out_channels + encoder_out_channels[-i - 2],
-                                        out_channels=out_channels))
+        for key, val in params.items():
+            v = deepcopy(val)
+            name = v.pop('name')
+            if name == 'skip':
+                self.middle[key] = nn.Identity()
+            else:
+                self.middle[key] = Empty()
 
     def forward(self, features):
-        out = features.pop()
-        for i in range(len(features)):
-            out = self.Up[i](out)
-            out = torch.cat([features[-i - 1], out], dim=1)
-            out = self.Conv[i](out)
+        out = features
+        for key, val in self.middle.items():
+            out[key] = val(features[key])
+
+        return out
+
+
+class Decoder(nn.Module):
+    def __init__(self, params):
+        super(Decoder, self).__init__()
+
+        self.block = nn.ModuleDict({})
+        self.up = nn.ModuleDict({})
+
+        for key, val in params.items():
+            if 'up' in val:
+                v = deepcopy(val['up'])
+                name = v.pop('name')
+                if name == 'ConvTranspose2d':
+                    self.up[key] = nn.ConvTranspose2d(**v, kernel_size=2, stride=2)
+
+            if 'block' in val:
+                v = deepcopy(val['block'])
+                name = v.pop('name')
+                if name == 'DoubleConv':
+                    self.block[key] = DoubleConv(**v)
+
+    def forward(self, features):
+        out = features[sorted(features.keys())[-1]]
+
+        for key in sorted(features.keys(), reverse=True):
+            if key in self.block:
+                out = torch.cat([features[key], out], dim=1)
+                out = self.block[key](out)
+            if key in self.up:
+                out = self.up[key](out)
 
         return out
 

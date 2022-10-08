@@ -1,51 +1,91 @@
 model:
+    name: Custom Unet
     encoder:
         level1:
+            name: DoubleConv
             in_channels: 3
             out_channels: 64
             residual: True
             batch_norm: True
         level2:
+            name: DoubleConv
             in_channels: 64
             out_channels: 128
             residual: True
             batch_norm: True
         level3:
+            name: DoubleConv
             in_channels: 128
             out_channels: 256
             residual: True
             batch_norm: True
         level4:
+            name: DoubleConv
             in_channels: 256
             out_channels: 512
             residual: True
             batch_norm: True
         level5:
+            name: DoubleConv
             in_channels: 512
             out_channels: 1024
             residual: True
             batch_norm: True
-    decoder:
-        level4:
-            in_channels: 1024
-            out_channels: 512
-            residual: True
-            batch_norm: True
-        level3:
-            in_channels: 512
-            out_channels: 256
-            residual: True
-            batch_norm: True
-        level2:
-            in_channels: 256
-            out_channels: 128
-            residual: True
-            batch_norm: True
+    middle:
         level1:
-            in_channels: 128
-            out_channels: 64
-            residual: True
-            batch_norm: True
+            name: skip
+        level2:
+            name: skip
+        level3:
+            name: skip
+        level4:
+            name: skip
+    decoder:
+        level5:
+            up:
+                name: ConvTranspose2d
+                in_channels: 1024
+                out_channels: 512
+        level4:
+            block:
+                name: DoubleConv
+                in_channels: 1024
+                out_channels: 512
+                residual: True
+                batch_norm: True
+            up:
+                name: ConvTranspose2d
+                in_channels: 512
+                out_channels: 256
+        level3:
+            block:
+                name: DoubleConv
+                in_channels: 512
+                out_channels: 256
+                residual: True
+                batch_norm: True
+            up:
+                name: ConvTranspose2d
+                in_channels: 256
+                out_channels: 128
+        level2:
+            block:
+                name: DoubleConv
+                in_channels: 256
+                out_channels: 128
+                residual: True
+                batch_norm: True
+            up:
+                name: ConvTranspose2d
+                in_channels: 128
+                out_channels: 64
+        level1:
+            block:
+                name: DoubleConv
+                in_channels: 128
+                out_channels: 64
+                residual: True
+                batch_norm: True
     head:
         in_channels: 64
         out_channels: 1
