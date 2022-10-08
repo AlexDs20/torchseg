@@ -23,8 +23,8 @@ class FolderDataSet(Dataset):
         image_folder = 'images'
         target_folder = 'targets'
 
-        self.images = [os.path.join(path, image_folder, f) for f in os.listdir(os.path.join(path, image_folder))]
-        self.targets = [os.path.join(path, target_folder, os.path.basename(f)) for f in self.images]
+        self.images = [os.path.join(path, image_folder, f) for f in os.listdir(os.path.join(path, image_folder))][:5]
+        self.targets = [os.path.join(path, target_folder, os.path.basename(f)) for f in self.images][:5]
 
         self.image_transforms = image_transforms
         self.target_transforms = target_transforms
