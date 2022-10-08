@@ -134,14 +134,14 @@ class ImageLogger(pl.Callback):
 
     @torch.no_grad()
     def on_validation_epoch_end(self, trainer: pl.Trainer, plModel: pl.LightningModule) -> None:
-        if self.log_valid and plModel.log_images['valid'] is not None:
-            images, targets, prob = plModel.log_images['valid']
+        if self.log_valid and plModel.log_data['valid'] is not None:
+            images, targets, prob = plModel.log_data['valid']
             self._log_batch_predictions(trainer, plModel, images, targets, prob, 'valid')
 
     @torch.no_grad()
     def on_train_epoch_end(self, trainer: pl.Trainer, plModel: pl.LightningModule) -> None:
-        if self.log_train and plModel.log_images['train'] is not None:
-            images, targets, prob = plModel.log_images['train']
+        if self.log_train and plModel.log_data['train'] is not None:
+            images, targets, prob = plModel.log_data['train']
             self._log_batch_predictions(trainer, plModel, images, targets, prob, 'train')
 
     def _get_colormap(self):

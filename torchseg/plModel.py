@@ -34,9 +34,9 @@ class plModel(pl.LightningModule):
         self.optim = get_optimizer(config['optimizer'])
         self.lr_scheduler = get_lr_scheduler(config['lr_scheduler'])
 
-        self.log_images = {"train": None,
-                           "valid": None,
-                           "test": None}
+        self.log_data = {"train": None,
+                         "valid": None,
+                         "test": None}
 
     def forward(self, x):
         out = self.model(x)
@@ -70,7 +70,7 @@ class plModel(pl.LightningModule):
 
         # Save images for logging
         if batch_idx == log_batch_idx:
-            self.log_images[stage] = [x, y, prob]
+            self.log_data[stage] = [x, y, prob]
 
         if stage == 'valid':
             # Log hp metric
