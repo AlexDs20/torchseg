@@ -93,16 +93,16 @@ class Middle(nn.Module):
         self.middle = nn.ModuleDict({})
 
         for key, val in params.items():
-            if val['name'] == 'skip':
-                v = deepcopy(val)
-                del v['name']
+            v = deepcopy(val)
+            name = v.pop('name')
+            if name == 'skip':
                 self.middle[key] = nn.Identity()
             else:
                 self.middle[key] = Empty()
 
     def forward(self, features):
         out = features
-        for i, (key, val) in enumerate(self.middle.items()):
+        for key, val in self.middle.items():
             out[key] = val(features[key])
 
         return out
