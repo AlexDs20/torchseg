@@ -8,7 +8,7 @@ class Model(nn.Module):
 
         self.encoder = Encoder(params['encoder'])
         self.middle = Middle(params['middle'])
-        self.decoder = Decoder(params)
+        self.decoder = Decoder(params['decoder'])
         self.head = Head(params['head'])
 
     def forward(self, x):

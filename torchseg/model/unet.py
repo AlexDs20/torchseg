@@ -109,14 +109,13 @@ class Middle(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, parameters):
+    def __init__(self, params):
         super(Decoder, self).__init__()
-        decoder_params = parameters['decoder']
 
         self.block = nn.ModuleDict({})
         self.up = nn.ModuleDict({})
 
-        for key, val in decoder_params.items():
+        for key, val in params.items():
             if 'up' in val:
                 v = deepcopy(val['up'])
                 name = v.pop('name')
