@@ -1,4 +1,5 @@
 import torch
+import importlib
 
 
 def make_subtiles(x: torch.Tensor, h: int, w: int) -> torch.Tensor:
@@ -48,3 +49,16 @@ def unmake_subtiles(x: torch.Tensor, m: int, n: int) -> torch.Tensor:
         raise ValueError(f'Required larger torch of size {n} while subtiles are of size {w} this does not work.')
 
     return x.reshape(m // h, n // w, b, c, h, w).permute(2, 3, 0, 4, 1, 5).reshape(b, c, m, n)
+
+
+def parse_kwargs(kwargs):
+    for key, val in kwargs.items():
+        if isinstance(val, dict):
+            val = parse_kwargs(val)
+        if isinstance(val, str):
+            exist = importlib.util.find_spec('.'.join(val.split('.')[:-1])) is not None
+            if exist:
+                mymodule = importlib.import_module('.'.join(val.split('.')[:-1]))
+                if hasattr(mymodule, val.split('.')[-1]):
+                    kwargs[key] = getattr(mymodule, val.split('.')[-1])
+    return kwargs
