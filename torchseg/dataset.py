@@ -46,8 +46,7 @@ class FolderDataSet(Dataset):
         if self.target_transforms is not None:
             target = self.target_transforms(target)
 
-        # TODO: Fix how target dtype is handled
-        return image, target.to(torch.long)
+        return image, target
 
 
 class InferenceDataSet(Dataset):

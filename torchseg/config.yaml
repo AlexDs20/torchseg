@@ -107,6 +107,7 @@ dataset:
             target_transforms:
                 ToTensor:
                 CenterCrop: 128
+                ConvertImageDtype: torch.int64
     valid:
         FolderDataSet:
             image_transforms:
@@ -115,6 +116,7 @@ dataset:
             target_transforms:
                 ToTensor:
                 CenterCrop: 128
+                ConvertImageDtype: torch.int64
     test:
         FolderDataSet:
             image_transforms:
@@ -123,6 +125,7 @@ dataset:
             target_transforms:
                 ToTensor:
                 CenterCrop: 128
+                ConvertImageDtype: torch.int64
 
 dataloader:
     train:

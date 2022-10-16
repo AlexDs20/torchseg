@@ -7,12 +7,18 @@ from torch.utils.data import DataLoader
 from torchseg.dataset import FolderDataSet
 from torchseg.cfgparser import get_callbacks, get_loggers, get_dataloader
 from torchseg.transfer_learning import transfer_learning
-from .plModel import plModel
+from torchseg.utils import parse_kwargs
+from torchseg.plModel import plModel
 
 
 def run(cfg_file):
     with open(cfg_file) as cfg:
         config = yaml.load(cfg, Loader=yaml.Loader)
+
+    model = plModel(config)
+
+    # parse the config to load from whatever library/module what is needed
+    config = parse_kwargs(config)
 
     train_dataloader = get_dataloader(config, 'train')
     valid_dataloader = get_dataloader(config, 'valid')
@@ -20,8 +26,6 @@ def run(cfg_file):
 
     callbacks = get_callbacks(config['callbacks'])
     loggers = get_loggers(config['loggers'])
-
-    model = plModel(config)
 
     trainer = pl.Trainer(callbacks=callbacks, logger=loggers, **config['trainer'])
 
