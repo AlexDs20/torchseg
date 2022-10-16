@@ -103,7 +103,7 @@ class plModel(pl.LightningModule):
 
     @torch.no_grad()
     def logits_to_prob(self, logits):
-        if self.config['data']['processing']['mode'] == MULTICLASS_MODE:
+        if self.config['data']['mode'] == MULTICLASS_MODE:
             prob = F.log_softmax(logits.detach(), dim=1).exp()
         else:
             prob = F.logsigmoid(logits.detach()).exp()
@@ -111,7 +111,7 @@ class plModel(pl.LightningModule):
 
     @torch.no_grad()
     def probs_to_classes(self, prob, threshold=0.5):
-        if self.config['data']['processing']['mode'] == MULTICLASS_MODE:
+        if self.config['data']['mode'] == MULTICLASS_MODE:
             classes = prob.argmax(dim=1)
         else:
             classes = torch.where(prob > threshold, 1, 0)
