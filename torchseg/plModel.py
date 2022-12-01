@@ -4,13 +4,15 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 
-from torchseg.losses import MULTICLASS_MODE
+from torchseg.losses import MULTICLASS_MODE, BINARY_MODE, MULTILABEL_MODE
 from torchseg.model import Model
 from torchseg.dataset import FolderDataSet
 from torchseg.transfer_learning import transfer_learning
 import torchseg.metrics.functional as MF
 
 from torchseg.cfgparser import get_metrics, get_callbacks, get_loss, get_optimizer, get_lr_scheduler, get_loggers
+
+REGRESSION_MODE = 'regression'
 
 
 # Defining LightningModule
@@ -38,6 +40,8 @@ class plModel(pl.LightningModule):
                          "valid": None,
                          "test": None}
 
+        self.mode = config['data']['mode']
+
     def forward(self, x):
         out = self.model(x)
         return out
@@ -64,13 +68,17 @@ class plModel(pl.LightningModule):
         self.log(f"{stage}/loss", loss)
 
         # Log metrics
-        prob = self.logits_to_prob(logits)
+        if self.mode in [BINARY_MODE, MULTICLASS_MODE, MULTILABEL_MODE]:
+            predicted_value = self.logits_to_prob(logits)
+        elif self.mode == REGRESSION_MODE:
+            predicted_value = logits
+
         for name, metric in self.metrics[stage].items():
-            self.log(f"{stage}/{name}_step", metric(prob, y))
+            self.log(f"{stage}/{name}_step", metric(predicted_value, y))
 
         # Save images for logging
         if batch_idx == log_batch_idx:
-            self.log_data[stage] = [x, y, prob]
+            self.log_data[stage] = [x, y, predicted_value]
 
         if stage == 'valid':
             # Log hp metric
@@ -103,16 +111,16 @@ class plModel(pl.LightningModule):
 
     @torch.no_grad()
     def logits_to_prob(self, logits):
-        if self.config['data']['mode'] == MULTICLASS_MODE:
+        if self.mode == MULTICLASS_MODE:
             prob = F.log_softmax(logits.detach(), dim=1).exp()
-        else:
+        elif self.mode in [BINARY_MODE, MULTILABEL_MODE]:
             prob = F.logsigmoid(logits.detach()).exp()
         return prob
 
     @torch.no_grad()
     def probs_to_classes(self, prob, threshold=0.5):
-        if self.config['data']['mode'] == MULTICLASS_MODE:
+        if self.mode == MULTICLASS_MODE:
             classes = prob.argmax(dim=1)
-        else:
+        elif self.mode in [BINARY_MODE, MULTILABEL_MODE]:
             classes = torch.where(prob > threshold, 1, 0)
         return classes
