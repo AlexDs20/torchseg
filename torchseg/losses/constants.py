@@ -16,3 +16,5 @@ MULTICLASS_MODE: str = "multiclass"
 #: pixels in each channel which are not belong to class labeled as **0**.
 #: Target mask shape - (N, C, H, W), model output mask shape (N, C, H, W).
 MULTILABEL_MODE: str = "multilabel"
+
+REGRESSION_MODE: str = "regression"

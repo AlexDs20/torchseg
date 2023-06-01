@@ -9,6 +9,7 @@ class DoubleConv(nn.Module):
     def __init__(self,
                  in_channels,
                  out_channels,
+                 mid_channels=None,
                  kernel_size=3,
                  stride=1,
                  padding=1,
@@ -17,18 +18,19 @@ class DoubleConv(nn.Module):
                  batch_norm=False,
                  **kwargs):
         super(DoubleConv, self).__init__()
-
+        if mid_channels is None:
+            mid_channels = out_channels
         self.residual = residual
         self.batch_norm = batch_norm
 
         self.conv1 = nn.Conv2d(in_channels,
-                               out_channels,
+                               mid_channels,
                                kernel_size=kernel_size,
                                stride=stride,
                                padding=padding,
                                padding_mode=padding_mode,
                                **kwargs)
-        self.conv2 = nn.Conv2d(out_channels,
+        self.conv2 = nn.Conv2d(mid_channels,
                                out_channels,
                                kernel_size=kernel_size,
                                stride=stride,

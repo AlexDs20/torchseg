@@ -4,15 +4,13 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 
-from torchseg.losses import MULTICLASS_MODE, BINARY_MODE, MULTILABEL_MODE
+from torchseg.losses import MULTICLASS_MODE, BINARY_MODE, MULTILABEL_MODE, REGRESSION_MODE
 from torchseg.model import Model
 from torchseg.dataset import FolderDataSet
 from torchseg.transfer_learning import transfer_learning
 import torchseg.metrics.functional as MF
 
 from torchseg.cfgparser import get_metrics, get_callbacks, get_loss, get_optimizer, get_lr_scheduler, get_loggers
-
-REGRESSION_MODE = 'regression'
 
 
 # Defining LightningModule
@@ -56,7 +54,7 @@ class plModel(pl.LightningModule):
 
     def _process_step(self, batch, batch_idx, stage, log_batch_idx=None):
         # Forward pass
-        x, y = batch
+        x, y = batch[0], batch[-1]
         logits = self.model(x)
 
         # Get loss
