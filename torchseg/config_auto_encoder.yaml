@@ -1,0 +1,248 @@
+model:
+    name: Custom Unet
+    encoder:
+        level1:
+            name: DoubleConv
+            in_channels: 3
+            out_channels: 64
+            residual: False
+            batch_norm: False
+        level2:
+            name: DoubleConv
+            in_channels: 64
+            out_channels: 128
+            residual: False
+            batch_norm: False
+        level3:
+            name: DoubleConv
+            in_channels: 128
+            out_channels: 256
+            residual: False
+            batch_norm: False
+        level4:
+            name: DoubleConv
+            in_channels: 256
+            out_channels: 512
+            residual: False
+            batch_norm: False
+        level5:
+            name: DoubleConv
+            in_channels: 512
+            mid_channels: 128
+            out_channels: 1024
+            residual: False
+            batch_norm: False
+    middle:
+        level1:
+            name:
+        level2:
+            name:
+        level3:
+            name:
+        level4:
+            name:
+    decoder:
+        level5:
+            up:
+                name: ConvTranspose2d
+                in_channels: 1024
+                out_channels: 512
+        level4:
+            block:
+                name: DoubleConv
+                in_channels: 512
+                out_channels: 512
+                residual: False
+                batch_norm: False
+            up:
+                name: ConvTranspose2d
+                in_channels: 512
+                out_channels: 256
+        level3:
+            block:
+                name: DoubleConv
+                in_channels: 256
+                out_channels: 256
+                residual: False
+                batch_norm: False
+            up:
+                name: ConvTranspose2d
+                in_channels: 256
+                out_channels: 128
+        level2:
+            block:
+                name: DoubleConv
+                in_channels: 128
+                out_channels: 128
+                residual: False
+                batch_norm: False
+            up:
+                name: ConvTranspose2d
+                in_channels: 128
+                out_channels: 64
+        level1:
+            block:
+                name: DoubleConv
+                in_channels: 64
+                out_channels: 64
+                residual: False
+                batch_norm: False
+    head:
+        in_channels: 64
+        out_channels: 3
+
+data:
+    train_folder: 'data/train'
+    valid_folder: 'data/valid'
+    test_folder: 'data/test'
+
+    ignore_index: &ignore_index -1
+    mode: &mode 'regression'
+
+dataset:
+    train:
+        AutoEncoderDataSet:
+            image_transforms:
+                ToTensor:
+                CenterCrop: 128
+    valid:
+        AutoEncoderDataSet:
+            image_transforms:
+                ToTensor:
+                CenterCrop: 128
+    test:
+        AutoEncoderDataSet:
+            image_transforms:
+                ToTensor:
+                CenterCrop: 128
+
+dataloader:
+    train:
+        batch_size: 3
+        num_workers: 6
+    valid:
+        batch_size: 2
+        num_workers: 2
+    test:
+        batch_size: 2
+        num_workers: 2
+
+run:
+    train: True
+    valid: True
+    test: True
+
+trainer:
+    max_epochs: 50
+    gpus: 1
+
+callbacks:
+    ModelCheckpoint:
+        dirpath: 'run/checkpoints'
+        filename: '{epoch}-{val_loss:.2f}'
+        save_top_k: -1
+        monitor: 'valid/loss'
+
+    ImageLogger:
+        RGB_image:
+            image1: [0,1,2]
+        RGB_target:
+            image1: [0,1,2]
+        RGB_output:
+            image1: [0,1,2]
+        normalize: True
+        log_probabilities: True
+        num_images:
+        on_validation_epoch_end: True
+        on_train_epoch_end: True
+
+    LearningRateMonitor:
+
+
+loggers:
+    TensorBoardLogger:
+        save_dir: 'run/lightning_logs'
+
+optimizer:
+    Adam:
+        lr: 0.00001
+
+lr_scheduler:
+    ReduceLROnPlateau:
+
+metrics:
+    train:
+        #Accuracy:
+        #    mode: *mode
+        #    threshold: 0.5
+        #    reduction: 'micro'
+        #F1Score:
+        #    mode: *mode
+        #    threshold: 0.5
+        #    reduction: 'micro'
+        #IoUScore:
+        #    mode: *mode
+        #    threshold: 0.5
+        #    reduction: 'micro'
+        #Precision:
+        #    mode: *mode
+        #    threshold: 0.5
+        #    reduction: 'micro'
+        #Recall:
+        #    mode: *mode
+        #    threshold: 0.5
+        #    reduction: 'micro'
+
+    valid:
+        #Accuracy:
+        #    mode: *mode
+        #    threshold: 0.5
+        #    reduction: 'micro'
+
+    test:
+        #Accuracy:
+        #    mode: *mode
+        #    threshold: 0.5
+        #    reduction: 'micro'
+
+loss:
+    train:
+        MSELoss:
+            reduction: mean
+        #FocalLoss:
+        #    weight: 1
+        #    mode: *mode
+        #    alpha: 0.25
+        #    gamma: 2
+        #    ignore_index: *ignore_index
+    valid:
+        MSELoss:
+            reduction: mean
+                #DiceLoss:
+                #    weight: 0.5
+                #    mode: *mode
+                #    ignore_index: *ignore_index
+                #FocalLoss:
+                #    weight: 0.5
+                #    mode: *mode
+                #    ignore_index: *ignore_index
+
+    test:
+        MSELoss:
+            reduction: mean
+        #DiceLoss:
+        #    weight: 0.5
+        #    mode: *mode
+        #    ignore_index: *ignore_index
+        #FocalLoss:
+        #    weight: 0.5
+        #    mode: *mode
+        #    ignore_index: *ignore_index
+
+transfer_learning:
+    # transfer_from_checkpoint:
+    # trainer:
+    #     max_epochs: 1
+    #     gpus: 1
+
+resume_from_ckpt:
